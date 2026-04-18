@@ -68,6 +68,36 @@ The backend will run on `http://127.0.0.1:8000`.
 
 The frontend will run on `http://127.0.0.1:5173`.
 
+## Local dev scripts
+If you want one-command startup on Windows PowerShell, use the scripts in `scripts/`:
+
+- `.\scripts\start-backend.ps1`
+  Starts the FastAPI backend in its own PowerShell window context.
+- `.\scripts\start-frontend.ps1`
+  Starts the Vite frontend in its own PowerShell window context.
+- `.\scripts\start-dev.ps1`
+  Opens two separate PowerShell windows on your PC and starts both backend and frontend automatically.
+- `.\scripts\stop-dev.ps1`
+  Stops the backend/frontend PowerShell windows that were launched by `start-dev.ps1`.
+
+These scripts open regular PowerShell windows, not VS Code integrated terminals.
+
+## VS Code tasks
+If you prefer to stay inside VS Code instead of opening external PowerShell windows, use the tasks in `.vscode/tasks.json`:
+
+- `Backend: Start`
+- `Frontend: Start`
+- `Dev: Start Both (VS Code)`
+- `Dev: Start Both (External Windows)`
+- `Dev: Stop External Windows`
+
+Open them from `Terminal` -> `Run Task`.
+
+Notes:
+- `Dev: Start Both (VS Code)` runs backend and frontend inside VS Code integrated terminals.
+- To stop the VS Code integrated-terminal workflow, use `Terminal` -> `Run Task` -> `Terminate Task`, or `Tasks: Terminate All Tasks` from the Command Palette.
+- `Dev: Stop External Windows` is only for the separate desktop PowerShell windows launched by `start-dev.ps1`.
+
 ## Where to place the Google API key
 Put the key in:
 

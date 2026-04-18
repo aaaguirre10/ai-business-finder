@@ -7,5 +7,6 @@ build/
 .pytest_cache/
 *.pyc
 *.tsbuildinfo
+.dev-sessions/
 frontend/.env
 backend/.env
