@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { LayoutShell } from "@/components/LayoutShell";
 import { LeadMap } from "@/components/LeadMap";
@@ -9,19 +9,36 @@ import { useLeadSearch } from "@/hooks/useLeadSearch";
 import type { Coordinates, Lead, SearchRequest, WebsiteStatusFilter } from "@/types/api";
 
 const DEFAULT_CITY = "El Paso, TX";
+const THEME_STORAGE_KEY = "ai-business-finder-theme";
 const DEFAULT_CENTER: Coordinates = {
   latitude: 31.7619,
   longitude: -106.485,
 };
 
+function getInitialThemeMode(): "light" | "dark" {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === "light" || savedTheme === "dark") {
+    return savedTheme;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 export default function App() {
   const [city, setCity] = useState(DEFAULT_CITY);
-  const [radius, setRadius] = useState(1500);
+  const [mapZoom, setMapZoom] = useState(13);
+  const [radius, setRadius] = useState(500);
   const [mapCenter, setMapCenter] = useState<Coordinates>(DEFAULT_CENTER);
   const [selectedPoint, setSelectedPoint] = useState<Coordinates | null>(DEFAULT_CENTER);
   const [hasSearched, setHasSearched] = useState(false);
   const [websiteStatusFilter, setWebsiteStatusFilter] = useState<WebsiteStatusFilter>("all");
   const [lastSearchRequest, setLastSearchRequest] = useState<SearchRequest | null>(null);
+  const [themeMode, setThemeMode] = useState<"light" | "dark">(getInitialThemeMode);
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
 
   const {
     searchResult,
@@ -93,8 +110,16 @@ export default function App() {
     return lead.website_status === websiteStatusFilter;
   });
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    document.documentElement.style.colorScheme = themeMode;
+    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+  }, [themeMode]);
+
   return (
     <LayoutShell
+      themeMode={themeMode}
+      onToggleTheme={() => setThemeMode((current) => (current === "light" ? "dark" : "light"))}
       sidebar={
         <SearchControls
           city={city}
@@ -111,9 +136,14 @@ export default function App() {
       map={
         <LeadMap
           center={mapCenter}
+          zoom={mapZoom}
           radius={radius}
           selectedPoint={selectedPoint}
           onSelectPoint={setSelectedPoint}
+          onZoomChange={setMapZoom}
+          onExpand={() => setIsMapExpanded(true)}
+          isExpanded={isMapExpanded}
+          onCloseExpanded={() => setIsMapExpanded(false)}
         />
       }
       results={
