@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 WebsiteStatus = Literal["has_website", "no_website", "unknown"]
 WebsiteStatusFilter = Literal["all", "has_website", "no_website", "unknown"]
+SearchStrategy = Literal["single", "tiled"]
 
 
 class SearchRequest(BaseModel):
@@ -52,6 +53,7 @@ class SearchResponse(BaseModel):
     radius: int
     count: int
     results: list[BusinessLead]
+    scan_metadata: "SearchScanMetadata"
 
 
 class ExportRequest(BaseModel):
@@ -82,3 +84,15 @@ class LeadSearchParams(BaseModel):
         if self.limit <= 0:
             raise ValueError("limit must be positive")
         return self
+
+
+class SearchScanMetadata(BaseModel):
+    strategy: SearchStrategy
+    tiles_searched: int
+    raw_places_count: int
+    unique_places_count: int
+
+
+class PlacesSearchResult(BaseModel):
+    results: list[BusinessLead]
+    scan_metadata: SearchScanMetadata

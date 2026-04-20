@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     rate_limit_requests: int = Field(30, alias="RATE_LIMIT_REQUESTS")
     rate_limit_window_seconds: int = Field(60, alias="RATE_LIMIT_WINDOW_SECONDS")
     default_result_limit: int = Field(20, alias="DEFAULT_RESULT_LIMIT")
-    max_result_limit: int = Field(50, alias="MAX_RESULT_LIMIT")
+    max_result_limit: int = Field(20, alias="MAX_RESULT_LIMIT")
     min_search_radius_meters: int = Field(100, alias="MIN_SEARCH_RADIUS_METERS")
     max_search_radius_meters: int = Field(5000, alias="MAX_SEARCH_RADIUS_METERS")
     search_cache_ttl_seconds: int = Field(180, alias="SEARCH_CACHE_TTL_SECONDS")

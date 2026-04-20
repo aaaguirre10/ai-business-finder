@@ -45,7 +45,8 @@ def build_search_params(payload: SearchRequest, settings: Settings) -> LeadSearc
     radius = min(max(payload.radius, settings.min_search_radius_meters), settings.max_search_radius_meters)
     requested_limit = payload.limit
     limit = payload.limit or settings.default_result_limit
-    limit = min(limit, settings.max_result_limit)
+    # Google Places Nearby Search (New) currently supports maxResultCount up to 20 only.
+    limit = min(limit, settings.max_result_limit, 20)
     return LeadSearchParams(
         city=payload.city,
         latitude=payload.latitude,
@@ -81,12 +82,13 @@ async def execute_search(
     cache_key = build_search_cache_key(params)
 
     async def fetch_response() -> SearchResponse:
-        results = await service.search_businesses(params)
+        search_result = await service.search_businesses(params)
         return SearchResponse(
             search_center=SearchCenter(latitude=params.latitude, longitude=params.longitude),
             radius=params.radius,
-            count=len(results),
-            results=results,
+            count=len(search_result.results),
+            results=search_result.results,
+            scan_metadata=search_result.scan_metadata,
         )
 
     return await cache.get_or_set(cache_key, fetch_response)

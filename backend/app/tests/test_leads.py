@@ -2,22 +2,30 @@ from fastapi.testclient import TestClient
 
 from app.api.routes.leads import get_places_service, get_search_cache
 from app.main import app
-from app.models.schemas import BusinessLead
+from app.models.schemas import BusinessLead, PlacesSearchResult, SearchScanMetadata
 
 client = TestClient(app)
 
 
 class StubPlacesService:
     async def search_businesses(self, params):
-        return [
-            BusinessLead(
-                place_id="abc123",
-                name="North Mesa Dental",
-                address="123 Main St, El Paso, TX",
-                phone=None,
-                website_status="no_website",
+        return PlacesSearchResult(
+            results=[
+                BusinessLead(
+                    place_id="abc123",
+                    name="North Mesa Dental",
+                    address="123 Main St, El Paso, TX",
+                    phone=None,
+                    website_status="no_website",
+                )
+            ],
+            scan_metadata=SearchScanMetadata(
+                strategy="single",
+                tiles_searched=1,
+                raw_places_count=1,
+                unique_places_count=1,
             )
-        ]
+        )
 
 
 def test_search_leads_returns_normalized_results() -> None:
@@ -40,6 +48,7 @@ def test_search_leads_returns_normalized_results() -> None:
     assert body["results"][0]["phone"] is None
     assert body["results"][0]["place_id"] == "abc123"
     assert body["results"][0]["website_status"] == "no_website"
+    assert body["scan_metadata"]["tiles_searched"] == 1
 
     app.dependency_overrides.clear()
     get_search_cache().clear()
@@ -57,8 +66,16 @@ def test_search_leads_clamps_radius_and_limit() -> None:
     class AssertingPlacesService:
         async def search_businesses(self, params):
             assert params.radius == 5000
-            assert params.limit == 50
-            return []
+            assert params.limit == 20
+            return PlacesSearchResult(
+                results=[],
+                scan_metadata=SearchScanMetadata(
+                    strategy="tiled",
+                    tiles_searched=9,
+                    raw_places_count=0,
+                    unique_places_count=0,
+                ),
+            )
 
     app.dependency_overrides[get_places_service] = AssertingPlacesService
     get_search_cache().clear()
@@ -84,7 +101,15 @@ def test_search_leads_defaults_limit() -> None:
     class AssertingPlacesService:
         async def search_businesses(self, params):
             assert params.limit == 20
-            return []
+            return PlacesSearchResult(
+                results=[],
+                scan_metadata=SearchScanMetadata(
+                    strategy="single",
+                    tiles_searched=1,
+                    raw_places_count=0,
+                    unique_places_count=0,
+                ),
+            )
 
     app.dependency_overrides[get_places_service] = AssertingPlacesService
     get_search_cache().clear()
@@ -111,15 +136,23 @@ def test_identical_searches_use_short_lived_cache() -> None:
 
         async def search_businesses(self, params):
             self.calls += 1
-            return [
-                BusinessLead(
-                    place_id="abc123",
-                    name="North Mesa Dental",
-                    address="123 Main St, El Paso, TX",
-                    phone=None,
-                    website_status="no_website",
+            return PlacesSearchResult(
+                results=[
+                    BusinessLead(
+                        place_id="abc123",
+                        name="North Mesa Dental",
+                        address="123 Main St, El Paso, TX",
+                        phone=None,
+                        website_status="no_website",
+                    )
+                ],
+                scan_metadata=SearchScanMetadata(
+                    strategy="single",
+                    tiles_searched=1,
+                    raw_places_count=1,
+                    unique_places_count=1,
                 )
-            ]
+            )
 
     service = CountingPlacesService()
     app.dependency_overrides[get_places_service] = lambda: service
@@ -150,22 +183,30 @@ def test_export_uses_cached_results_and_filters_rows() -> None:
 
         async def search_businesses(self, params):
             self.calls += 1
-            return [
-                BusinessLead(
-                    place_id="with-site",
-                    name="Site Business",
-                    address="123 Main St, El Paso, TX",
-                    phone="915-555-0100",
-                    website_status="has_website",
+            return PlacesSearchResult(
+                results=[
+                    BusinessLead(
+                        place_id="with-site",
+                        name="Site Business",
+                        address="123 Main St, El Paso, TX",
+                        phone="915-555-0100",
+                        website_status="has_website",
+                    ),
+                    BusinessLead(
+                        place_id="no-site",
+                        name="No Site Business",
+                        address="456 Mesa St, El Paso, TX",
+                        phone=None,
+                        website_status="no_website",
+                    ),
+                ],
+                scan_metadata=SearchScanMetadata(
+                    strategy="single",
+                    tiles_searched=1,
+                    raw_places_count=2,
+                    unique_places_count=2,
                 ),
-                BusinessLead(
-                    place_id="no-site",
-                    name="No Site Business",
-                    address="456 Mesa St, El Paso, TX",
-                    phone=None,
-                    website_status="no_website",
-                ),
-            ]
+            )
 
     service = CountingPlacesService()
     app.dependency_overrides[get_places_service] = lambda: service

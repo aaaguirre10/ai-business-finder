@@ -35,7 +35,7 @@ export default function App() {
   const [mapCenter, setMapCenter] = useState<Coordinates>(DEFAULT_CENTER);
   const [selectedPoint, setSelectedPoint] = useState<Coordinates | null>(DEFAULT_CENTER);
   const [hasSearched, setHasSearched] = useState(false);
-  const [websiteStatusFilter, setWebsiteStatusFilter] = useState<WebsiteStatusFilter>("all");
+  const [websiteStatusFilter, setWebsiteStatusFilter] = useState<WebsiteStatusFilter>("no_website");
   const [lastSearchRequest, setLastSearchRequest] = useState<SearchRequest | null>(null);
   const [themeMode, setThemeMode] = useState<"light" | "dark">(getInitialThemeMode);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
@@ -84,7 +84,7 @@ export default function App() {
       limit: searchRequest.limit,
     });
     setLastSearchRequest(searchRequest);
-    setWebsiteStatusFilter("all");
+    setWebsiteStatusFilter("no_website");
     setHasSearched(true);
   }
 
@@ -109,6 +109,20 @@ export default function App() {
 
     return lead.website_status === websiteStatusFilter;
   });
+
+  const totalFetchedCount = searchResult?.count ?? 0;
+  const rawPlacesCount = searchResult?.scan_metadata.raw_places_count ?? totalFetchedCount;
+  const tilesSearched = searchResult?.scan_metadata.tiles_searched ?? 1;
+  const usedDeeperScan = searchResult?.scan_metadata.strategy === "tiled";
+  const noWebsiteCount = (searchResult?.results ?? []).filter(
+    (lead) => lead.website_status === "no_website",
+  ).length;
+  const hasWebsiteCount = (searchResult?.results ?? []).filter(
+    (lead) => lead.website_status === "has_website",
+  ).length;
+  const unknownCount = (searchResult?.results ?? []).filter(
+    (lead) => lead.website_status === "unknown",
+  ).length;
 
   useEffect(() => {
     document.documentElement.dataset.theme = themeMode;
@@ -153,11 +167,23 @@ export default function App() {
             isGeocoding={isGeocoding}
             error={error}
             resultCount={filteredLeads.length}
+            totalFetchedCount={totalFetchedCount}
+            rawPlacesCount={rawPlacesCount}
+            tilesSearched={tilesSearched}
+            usedDeeperScan={usedDeeperScan}
+            websiteStatusFilter={websiteStatusFilter}
             hasSearched={hasSearched}
           />
           <ResultsTable
             leads={filteredLeads}
             hasSearched={hasSearched}
+            totalFetchedCount={totalFetchedCount}
+            rawPlacesCount={rawPlacesCount}
+            tilesSearched={tilesSearched}
+            usedDeeperScan={usedDeeperScan}
+            noWebsiteCount={noWebsiteCount}
+            hasWebsiteCount={hasWebsiteCount}
+            unknownCount={unknownCount}
             websiteStatusFilter={websiteStatusFilter}
             onWebsiteStatusFilterChange={setWebsiteStatusFilter}
             onExport={handleExport}

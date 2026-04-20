@@ -29,11 +29,19 @@ export type SearchRequest = {
   limit?: number;
 };
 
+export type SearchScanMetadata = {
+  strategy: "single" | "tiled";
+  tiles_searched: number;
+  raw_places_count: number;
+  unique_places_count: number;
+};
+
 export type SearchResponse = {
   search_center: Coordinates;
   radius: number;
   count: number;
   results: Lead[];
+  scan_metadata: SearchScanMetadata;
 };
 
 export type ExportRequest = {

@@ -3,6 +3,13 @@ import type { Lead, WebsiteStatusFilter } from "@/types/api";
 type ResultsTableProps = {
   leads: Lead[];
   hasSearched: boolean;
+  totalFetchedCount: number;
+  rawPlacesCount: number;
+  tilesSearched: number;
+  usedDeeperScan: boolean;
+  noWebsiteCount: number;
+  hasWebsiteCount: number;
+  unknownCount: number;
   websiteStatusFilter: WebsiteStatusFilter;
   onWebsiteStatusFilterChange: (value: WebsiteStatusFilter) => void;
   onExport: () => Promise<void>;
@@ -24,6 +31,13 @@ function formatStatusLabel(status: Lead["website_status"]): string {
 export function ResultsTable({
   leads,
   hasSearched,
+  totalFetchedCount,
+  rawPlacesCount,
+  tilesSearched,
+  usedDeeperScan,
+  noWebsiteCount,
+  hasWebsiteCount,
+  unknownCount,
   websiteStatusFilter,
   onWebsiteStatusFilterChange,
   onExport,
@@ -35,7 +49,19 @@ export function ResultsTable({
       <div className="panel-card__header panel-card__header--split">
         <div>
           <h2>Lead results</h2>
-          <p>Filter the current search results and export only the visible lead set.</p>
+          <p>
+            Filter the current search results and export only the visible lead set.
+            {hasSearched
+              ? usedDeeperScan
+                ? ` Showing ${leads.length} of ${totalFetchedCount} unique places from ${rawPlacesCount} total place hits across ${tilesSearched} zone scans.`
+                : ` Showing ${leads.length} of ${totalFetchedCount} fetched places.`
+              : ""}
+          </p>
+          {hasSearched && usedDeeperScan ? (
+            <div className="scan-badge-row">
+              <span className="scan-badge">Deeper scan used</span>
+            </div>
+          ) : null}
         </div>
         <div className="table-actions">
           <label className="field field--compact">
@@ -47,8 +73,8 @@ export function ResultsTable({
               }
               disabled={!hasSearched}
             >
-              <option value="all">All results</option>
               <option value="no_website">No website</option>
+              <option value="all">All results</option>
               <option value="has_website">Has website</option>
               <option value="unknown">Unknown</option>
             </select>
@@ -65,6 +91,20 @@ export function ResultsTable({
           </button>
         </div>
       </div>
+
+      {hasSearched ? (
+        <div className="results-summary">
+          <span className="results-summary__item">
+            <strong>{noWebsiteCount}</strong> no website
+          </span>
+          <span className="results-summary__item">
+            <strong>{hasWebsiteCount}</strong> has website
+          </span>
+          <span className="results-summary__item">
+            <strong>{unknownCount}</strong> unknown
+          </span>
+        </div>
+      ) : null}
 
       <div className="table-wrapper">
         <table className="results-table">
